@@ -10,9 +10,10 @@ This is a Go-based tool that fetches Jira tickets by ID, extracts relevant infor
 
 - **main.go**: Entry point with Anthropic SDK integration using Vertex AI authentication
 - **pkg/jira/**: Package for Jira API integration with full ticket parsing
-- **pkg/prompt/**: Package for prompt template loading and rendering
+- **pkg/prompt/**: Package for prompt template loading and rendering (supports Markdown and POML)
 - **prompts/**: Directory containing prompt templates for AI generation
-- **prompts/implementation-plan.md**: Default template for implementation plan prompts
+- **prompts/implementation-plan.md**: Default Markdown template for implementation plan prompts
+- **prompts/implementation-plan.poml**: POML (Prompt Markup Language) template with structured format
 - **implementation-plans/**: Directory where generated implementation plans are saved as markdown files
 
 ## Development Commands
@@ -41,8 +42,11 @@ JIRA_TOKEN=<YOUR_PAT> ./jig <TICKET_ID>
 # With custom Jira instance
 ./jig --jira-base-url=https://my-jira.com <TICKET_ID>
 
-# With custom prompt template
+# With custom markdown template
 ./jig --template=my-custom-prompt.md <TICKET_ID>
+
+# With POML template (structured format)
+./jig --template=prompts/implementation-plan.poml <TICKET_ID>
 
 # Combined flags
 ./jig -t <YOUR_PAT> -r us-central1 -p my-project --jira-base-url=https://my-jira.com --template=custom.md <TICKET_ID>
@@ -94,25 +98,66 @@ The Jira client supports two authentication modes:
 
 ## Prompt Templates
 
-The tool uses customizable prompt templates to generate implementation plans. Templates use Go's text/template syntax with ticket data.
+The tool supports two template formats for generating implementation plans:
 
-### Default Template
-- **Location**: `prompts/implementation-plan.md`
-- **Variables Available**:
-  - `{{.Summary}}` - Ticket title
-  - `{{.Description}}` - Ticket description
-  - `{{.Status}}` - Current status
-  - `{{.IssueType}}` - Issue type (Bug, Story, etc.)
-  - `{{.Priority}}` - Priority level
-  - `{{.Components}}` - Components (if any)
-  - `{{.Labels}}` - Labels (if any)
-  - `{{.Assignee}}` - Assigned user
-  - `{{.Reporter}}` - Reporter user
+### Supported Formats
 
-### Custom Templates
-Create your own template using the `--template` flag:
+#### 1. Markdown Templates (.md)
+- Uses Go's text/template syntax with ticket data
+- Simple variable substitution and conditionals
+- **Default**: `prompts/implementation-plan.md`
+
+#### 2. POML Templates (.poml)
+- Uses Prompt Markup Language format from Microsoft
+- Structured XML-like syntax with semantic elements
+- Better separation of role, task, context, and formatting
+- **Available**: `prompts/implementation-plan.poml`
+
+### Template Variables
+Both formats support the same template variables:
+- `{{.Summary}}` - Ticket title
+- `{{.Description}}` - Ticket description
+- `{{.Status}}` - Current status
+- `{{.IssueType}}` - Issue type (Bug, Story, etc.)
+- `{{.Priority}}` - Priority level
+- `{{.Components}}` - Components (if any)
+- `{{.Labels}}` - Labels (if any)
+- `{{.Assignee}}` - Assigned user
+- `{{.Reporter}}` - Reporter user
+
+### Using Custom Templates
+Specify any template format using the `--template` flag:
 ```bash
+# Use markdown template
 ./jig --template=my-custom-prompt.md RHEL-12345
+
+# Use POML template
+./jig --template=my-custom-prompt.poml RHEL-12345
+```
+
+### POML Template Structure
+POML templates use semantic XML tags for better organization:
+```xml
+<poml>
+  <role>Define the AI's role and expertise</role>
+  <task>Specify the main task to accomplish</task>
+  <context>
+    <section name="ticket-information">
+      <title>{{.Summary}}</title>
+      <description>{{.Description}}</description>
+      <metadata>
+        <status>{{.Status}}</status>
+        <!-- ... other fields -->
+      </metadata>
+    </section>
+  </context>
+  <output-format>
+    <section name="requirements-analysis">
+      <title>Analysis of Requirements</title>
+      <content>Specific formatting instructions</content>
+    </section>
+  </output-format>
+</poml>
 ```
 
 ## Output Files
@@ -157,7 +202,9 @@ implementation-plans/RHEL-12345_20240917_143052.md
 - Supports custom Google Cloud regions and project IDs via CLI flags
 - Supports custom Jira instances via `--jira-base-url` flag
 - Configurable prompt templates via `--template` flag
+- Dual template system: Markdown (.md) and POML (.poml) formats
 - Template system uses Go's text/template with ticket data interpolation
+- POML support for structured, semantic prompt engineering
 - The prompts directory contains customizable templates
 - Automatically saves implementation plans to `implementation-plans/` directory
 - Generated files use format: `{TICKET_ID}_{TIMESTAMP}.md`

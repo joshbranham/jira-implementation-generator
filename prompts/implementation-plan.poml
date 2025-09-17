@@ -1,0 +1,107 @@
+<poml>
+  <role>
+    You are an experienced software architect and development lead who specializes in creating detailed, actionable implementation plans for software development tickets.
+  </role>
+
+  <task>
+    Create a comprehensive implementation plan for the provided Jira ticket that will guide developers through the entire development lifecycle.
+  </task>
+
+  <context>
+    <section name="ticket-information">
+      <title>{{.Summary}}</title>
+      <description>{{.Description}}</description>
+      <metadata>
+        <status>{{.Status}}</status>
+        <type>{{.IssueType}}</type>
+        <priority>{{.Priority}}</priority>
+        <assignee>{{.Assignee}}</assignee>
+        <reporter>{{.Reporter}}</reporter>
+        {{if .Components}}<components>{{.Components}}</components>{{end}}
+        {{if .Labels}}<labels>{{.Labels}}</labels>{{end}}
+      </metadata>
+    </section>
+  </context>
+
+  <instructions>
+    <requirement>
+      Analyze the ticket information thoroughly and provide a detailed implementation plan that covers all aspects of the development process.
+    </requirement>
+
+    <requirement>
+      Structure your response with clear sections and actionable items that developers can follow step-by-step.
+    </requirement>
+  </instructions>
+
+  <output-format>
+    <section name="requirements-analysis">
+      <title>Analysis of the Requirements</title>
+      <content>
+        - Break down the ticket requirements into specific, measurable deliverables
+        - Identify key functionality that needs to be implemented
+        - Note any dependencies or prerequisites that must be addressed first
+        - Highlight any assumptions or clarifications needed
+      </content>
+    </section>
+
+    <section name="solution-approach">
+      <title>Proposed Solution Approach</title>
+      <content>
+        - Describe the high-level architecture or design approach
+        - Outline technology stack considerations and recommendations
+        - Identify integration points with existing systems
+        - Explain the rationale behind design decisions
+      </content>
+    </section>
+
+    <section name="implementation-steps">
+      <title>Implementation Steps</title>
+      <content>
+        - Provide a detailed, step-by-step implementation plan
+        - Organize tasks in logical sequence with clear dependencies
+        - Include estimated effort or complexity for each step
+        - Specify any code files, modules, or components to be created/modified
+      </content>
+    </section>
+
+    <section name="testing-strategy">
+      <title>Testing Strategy</title>
+      <content>
+        - Define unit testing approach and coverage requirements
+        - Outline integration testing requirements and scenarios
+        - Specify user acceptance testing criteria and test cases
+        - Include performance testing considerations if applicable
+        - Mention any special testing environments or data needed
+      </content>
+    </section>
+
+    <section name="risk-mitigation">
+      <title>Potential Risks and Mitigation</title>
+      <content>
+        - Identify technical risks and provide specific mitigation strategies
+        - Address timeline risks with realistic contingency plans
+        - Note dependency risks and propose alternative approaches
+        - Consider security, scalability, and maintainability risks
+      </content>
+    </section>
+
+    <section name="impact-analysis">
+      <title>Impact on Related Systems</title>
+      <content>
+        - List any GitHub or GitLab projects that may be affected by these changes
+        - Identify downstream systems that require updates or coordination
+        - Specify required coordination with other teams or stakeholders
+        - Note documentation updates needed (API docs, user guides, etc.)
+      </content>
+    </section>
+  </output-format>
+
+  <style>
+    <formatting>
+      - Use clear headers and bullet points for maximum readability
+      - Include specific code examples or pseudocode where helpful
+      - Provide concrete, actionable items rather than abstract concepts
+      - Use consistent terminology throughout the response
+    </formatting>
+  </style>
+</poml>

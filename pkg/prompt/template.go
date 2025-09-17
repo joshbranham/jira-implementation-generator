@@ -13,19 +13,31 @@ import (
 
 // TemplateData holds the data for prompt template rendering
 type TemplateData struct {
-	Summary    string
+	Summary     string
 	Description string
-	Status     string
-	IssueType  string
-	Priority   string
-	Components string
-	Labels     string
-	Assignee   string
-	Reporter   string
+	Status      string
+	IssueType   string
+	Priority    string
+	Components  string
+	Labels      string
+	Assignee    string
+	Reporter    string
 }
 
 // LoadAndRenderTemplate loads a prompt template and renders it with ticket data
+// Supports both markdown (.md) and POML (.poml) formats
 func LoadAndRenderTemplate(templatePath string, ticket *jira.Ticket) (string, error) {
+	// Determine format based on file extension
+	if strings.HasSuffix(strings.ToLower(templatePath), ".poml") {
+		return LoadAndRenderPOMLTemplate(templatePath, ticket)
+	}
+
+	// Default to markdown format
+	return loadAndRenderMarkdownTemplate(templatePath, ticket)
+}
+
+// loadAndRenderMarkdownTemplate loads a markdown template and renders it with ticket data
+func loadAndRenderMarkdownTemplate(templatePath string, ticket *jira.Ticket) (string, error) {
 	// Read the template file
 	templateContent, err := os.ReadFile(templatePath)
 	if err != nil {
@@ -90,5 +102,5 @@ func createTemplateData(ticket *jira.Ticket) TemplateData {
 
 // GetDefaultTemplatePath returns the default template path
 func GetDefaultTemplatePath() string {
-	return "prompts/implementation-plan.md"
+	return "prompts/implementation-plan.poml"
 }
