@@ -1,10 +1,10 @@
 <poml>
   <role>
-    You are an experienced software architect and development lead who specializes in creating detailed, actionable implementation plans for software development tickets.
+    You are a software engineer working on a Site Reliability Engineering team and need to implement what is asked in a Jira ticket.
   </role>
 
   <task>
-    Create a comprehensive implementation plan for the provided Jira ticket that will guide developers through the entire development lifecycle.
+    Create a comprehensive implementation plan for the provided Jira ticket that will guide the engineer. Adapt your approach based on the ticket type: for Bug tickets focus on debugging, root cause analysis, and targeted fixes; for Story/Epic tickets focus on feature development and implementation.
   </task>
 
   <context>
@@ -25,7 +25,9 @@
 
   <instructions>
     <requirement>
-      Analyze the ticket information thoroughly and provide a detailed implementation plan that covers all aspects of the development process.
+      Analyze the ticket information thoroughly and provide a detailed implementation plan that covers all aspects of the development process. Consider the ticket type when structuring your response:
+      - For Bug tickets: Focus on debugging workflows, root cause analysis, and minimal invasive fixes
+      - For Story/Epic tickets: Focus on feature design, development workflows, and comprehensive implementation
     </requirement>
 
     <requirement>
@@ -35,53 +37,91 @@
 
   <output-format>
     <section name="requirements-analysis">
-      <title>Analysis of the Requirements</title>
+      <title>{{if eq .IssueType "Bug"}}Bug Analysis{{else}}Analysis of the Requirements{{end}}</title>
       <content>
+        {{if eq .IssueType "Bug"}}
+        - Analyze the bug report to understand the problem symptoms and expected behavior
+        - Identify what is currently broken or not working as intended
+        - Determine the scope of the issue (single component, integration, system-wide)
+        - Note any error messages, logs, or diagnostic information provided
+        {{else}}
         - Break down the ticket requirements into specific, measurable deliverables
         - Identify key functionality that needs to be implemented
         - Note any dependencies or prerequisites that must be addressed first
         - Highlight any assumptions or clarifications needed
+        {{end}}
       </content>
     </section>
 
     <section name="solution-approach">
-      <title>Proposed Solution Approach</title>
+      <title>{{if eq .IssueType "Bug"}}Root Cause Analysis &amp; Fix Strategy{{else}}Proposed Solution Approach{{end}}</title>
       <content>
+        {{if eq .IssueType "Bug"}}
+        - Identify potential root causes based on the symptoms described
+        - Outline debugging steps to isolate the issue (logs, traces, reproduction steps)
+        - Propose the most likely fix strategy with minimal code changes
+        - Consider impact on existing functionality and backward compatibility
+        {{else}}
         - Describe the high-level architecture or design approach
         - Outline technology stack considerations and recommendations
         - Identify integration points with existing systems
         - Explain the rationale behind design decisions
+        {{end}}
       </content>
     </section>
 
     <section name="implementation-steps">
-      <title>Implementation Steps</title>
+      <title>{{if eq .IssueType "Bug"}}Debugging &amp; Fix Implementation Steps{{else}}Implementation Steps{{end}}</title>
       <content>
+        {{if eq .IssueType "Bug"}}
+        - Step-by-step debugging process to confirm the root cause
+        - Specific code changes needed to fix the issue
+        - Verification steps to ensure the fix works correctly
+        - Regression testing to ensure no new issues are introduced
+        - Code files and specific functions/methods that need modification
+        {{else}}
         - Provide a detailed, step-by-step implementation plan
         - Organize tasks in logical sequence with clear dependencies
         - Include estimated effort or complexity for each step
         - Specify any code files, modules, or components to be created/modified
+        {{end}}
       </content>
     </section>
 
     <section name="testing-strategy">
-      <title>Testing Strategy</title>
+      <title>{{if eq .IssueType "Bug"}}Verification &amp; Testing Strategy{{else}}Testing Strategy{{end}}</title>
       <content>
+        {{if eq .IssueType "Bug"}}
+        - Create test cases that reproduce the original bug to verify the fix
+        - Test edge cases and boundary conditions related to the bug
+        - Regression testing to ensure the fix doesn't break existing functionality
+        - Performance impact assessment if applicable
+        - User acceptance testing to confirm the bug is resolved from user perspective
+        {{else}}
         - Define unit testing approach and coverage requirements
         - Outline integration testing requirements and scenarios
         - Specify user acceptance testing criteria and test cases
         - Include performance testing considerations if applicable
         - Mention any special testing environments or data needed
+        {{end}}
       </content>
     </section>
 
     <section name="risk-mitigation">
-      <title>Potential Risks and Mitigation</title>
+      <title>{{if eq .IssueType "Bug"}}Fix Risks and Mitigation{{else}}Potential Risks and Mitigation{{end}}</title>
       <content>
+        {{if eq .IssueType "Bug"}}
+        - Risk of introducing new bugs while fixing the current one
+        - Risk of incomplete fix that doesn't address all symptoms
+        - Risk of breaking backward compatibility or existing integrations
+        - Risk of performance degradation from the fix
+        - Mitigation: thorough testing, code review, and staged rollout
+        {{else}}
         - Identify technical risks and provide specific mitigation strategies
         - Address timeline risks with realistic contingency plans
         - Note dependency risks and propose alternative approaches
         - Consider security, scalability, and maintainability risks
+        {{end}}
       </content>
     </section>
 
