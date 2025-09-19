@@ -11,6 +11,8 @@ import (
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/vertex"
+	"github.com/briandowns/spinner"
+	"github.com/fatih/color"
 	"github.com/joshbranham/jira-implementation-generator/pkg/jira"
 	"github.com/joshbranham/jira-implementation-generator/pkg/prompt"
 	"github.com/spf13/cobra"
@@ -70,66 +72,43 @@ func runJiraGenerator(ctx context.Context, ticketID string) {
 	// Initialize Jira client with optional authentication and custom base URL
 	var jiraClient *jira.Client
 	if token != "" {
-		fmt.Println("Using Personal Access Token for authentication")
+		color.Blue("🔐 Using Personal Access Token for authentication")
 		jiraClient = jira.NewClient(
 			jira.WithToken(token),
 			jira.WithBaseURL(jiraBaseURL),
 		)
 
-		// Test authentication
-		fmt.Print("Testing authentication... ")
+		// Test authentication with spinner
+		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+		s.Suffix = " Testing authentication..."
+		s.Start()
 		if err := jiraClient.TestAuthentication(); err != nil {
-			log.Fatalf("Authentication failed: %v", err)
+			s.Stop()
+			color.Red("❌ Authentication failed: %v", err)
+			os.Exit(1)
 		}
-		fmt.Println("✓ Authentication successful")
+		s.Stop()
+		color.Green("✅ Authentication successful")
 	} else {
-		fmt.Println("Using anonymous access (public tickets only)")
+		color.Yellow("🌐 Using anonymous access (public tickets only)")
 		jiraClient = jira.NewClient(jira.WithBaseURL(jiraBaseURL))
 	}
 
-	fmt.Printf("Using Jira instance: %s\n", jiraBaseURL)
+	color.Cyan("🏠 Using Jira instance: %s", jiraBaseURL)
 
-	// Fetch Jira ticket
-	fmt.Printf("Fetching Jira ticket: %s\n", ticketID)
+	// Fetch Jira ticket with spinner
+	s := spinner.New(spinner.CharSets[35], 100*time.Millisecond)
+	s.Suffix = fmt.Sprintf(" Fetching Jira ticket: %s", ticketID)
+	s.Start()
 	ticket, err := jiraClient.GetTicket(ticketID)
+	s.Stop()
 	if err != nil {
-		log.Fatalf("Failed to fetch Jira ticket: %v", err)
+		color.Red("❌ Failed to fetch Jira ticket: %v", err)
+		os.Exit(1)
 	}
 
-	fmt.Printf("Successfully fetched ticket: %s - %s\n", ticket.Key, ticket.Summary)
-	fmt.Printf("Status: %s\n", ticket.Status.Name)
-	fmt.Printf("Type: %s\n", ticket.IssueType.Name)
-	fmt.Printf("Priority: %s\n", ticket.Priority.Name)
-
-	if ticket.Assignee != nil {
-		fmt.Printf("Assignee: %s\n", ticket.Assignee.DisplayName)
-	} else {
-		fmt.Printf("Assignee: Unassigned\n")
-	}
-
-	fmt.Printf("Reporter: %s\n", ticket.Reporter.DisplayName)
-
-	if len(ticket.Components) > 0 {
-		fmt.Printf("Components: ")
-		for i, comp := range ticket.Components {
-			if i > 0 {
-				fmt.Printf(", ")
-			}
-			fmt.Printf("%s", comp.Name)
-			if comp.Lead != nil {
-				fmt.Printf(" (Lead: %s)", comp.Lead.DisplayName)
-			}
-		}
-		fmt.Println()
-	} else {
-		fmt.Printf("Components: None\n")
-	}
-
-	if len(ticket.Labels) > 0 {
-		fmt.Printf("Labels: %s\n", strings.Join(ticket.Labels, ", "))
-	}
-
-	fmt.Printf("Description: %.200s...\n", ticket.Description)
+	color.Green("\n✅ Successfully fetched ticket")
+	printTicketInfo(ticket)
 
 	// Determine template path
 	templateFilePath := templatePath
@@ -138,20 +117,23 @@ func runJiraGenerator(ctx context.Context, ticketID string) {
 	}
 
 	// Load and render prompt template
-	fmt.Printf("Loading prompt template: %s\n", templateFilePath)
+	color.Cyan("\n📋 Loading prompt template: %s", templateFilePath)
 	promptText, err := prompt.LoadAndRenderTemplate(templateFilePath, ticket)
 	if err != nil {
-		log.Fatalf("Failed to load prompt template: %v", err)
+		color.Red("❌ Failed to load prompt template: %v", err)
+		os.Exit(1)
 	}
 
 	// Initialize Anthropic client
-	fmt.Printf("Using Google Cloud region: %s, project: %s\n", region, projectID)
+	color.Cyan("☁️  Using Google Cloud region: %s, project: %s", region, projectID)
 	client := anthropic.NewClient(
 		vertex.WithGoogleAuth(ctx, region, projectID),
 	)
 
-	// Generate implementation plan
-	fmt.Println("\nGenerating implementation plan...")
+	// Generate implementation plan with spinner
+	s = spinner.New(spinner.CharSets[11], 100*time.Millisecond)
+	s.Suffix = " 🤖 Generating implementation plan with Claude..."
+	s.Start()
 	message, err := client.Messages.New(ctx, anthropic.MessageNewParams{
 		MaxTokens: 4096,
 		Messages: []anthropic.MessageParam{
@@ -159,11 +141,17 @@ func runJiraGenerator(ctx context.Context, ticketID string) {
 		},
 		Model: DefaultModel,
 	})
+	s.Stop()
 	if err != nil {
-		log.Fatalf("Failed to generate implementation plan: %v", err)
+		color.Red("❌ Failed to generate implementation plan: %v", err)
+		os.Exit(1)
 	}
 
-	fmt.Println("\n=== IMPLEMENTATION PLAN ===")
+	color.Green("\n✅ Implementation plan generated successfully!")
+	printSeparator()
+	color.HiMagenta("🚀 IMPLEMENTATION PLAN")
+	printSeparator()
+
 	var implementationPlan strings.Builder
 	for i := range message.Content {
 		content := message.Content[i].Text
@@ -171,10 +159,11 @@ func runJiraGenerator(ctx context.Context, ticketID string) {
 		implementationPlan.WriteString(content)
 		implementationPlan.WriteString("\n")
 	}
+	printSeparator()
 
 	// Save implementation plan to file
 	if err := saveImplementationPlan(ticketID, ticket, implementationPlan.String(), "implementation-plans"); err != nil {
-		log.Printf("Warning: Failed to save implementation plan to file: %v", err)
+		color.Yellow("⚠️  Warning: Failed to save implementation plan to file: %v", err)
 	}
 }
 
@@ -227,6 +216,68 @@ func saveImplementationPlan(ticketID string, ticket *jira.Ticket, plan string, d
 		return fmt.Errorf("failed to write file %s: %w", filePath, err)
 	}
 
-	fmt.Printf("\n✓ Implementation plan saved to: %s\n", filePath)
+	color.Green("\n💾 Implementation plan saved to: %s", filePath)
 	return nil
+}
+
+// printSeparator prints a decorative separator
+func printSeparator() {
+	color.HiBlue("═══════════════════════════════════════════════════════════════")
+}
+
+// printTicketInfo prints formatted ticket information
+func printTicketInfo(ticket *jira.Ticket) {
+	fmt.Println()
+	printSeparator()
+	color.HiYellow("📋 TICKET INFORMATION")
+	printSeparator()
+
+	color.HiWhite("🎫 Ticket: ")
+	color.Green("%s - %s", ticket.Key, ticket.Summary)
+
+	color.HiWhite("📊 Status: ")
+	color.Cyan("%s", ticket.Status.Name)
+
+	color.HiWhite("🏷️  Type: ")
+	color.Cyan("%s", ticket.IssueType.Name)
+
+	color.HiWhite("⚡ Priority: ")
+	color.Cyan("%s", ticket.Priority.Name)
+
+	if ticket.Assignee != nil {
+		color.HiWhite("👤 Assignee: ")
+		color.Cyan("%s", ticket.Assignee.DisplayName)
+	} else {
+		color.HiWhite("👤 Assignee: ")
+		color.Yellow("Unassigned")
+	}
+
+	color.HiWhite("📝 Reporter: ")
+	color.Cyan("%s", ticket.Reporter.DisplayName)
+
+	if len(ticket.Components) > 0 {
+		color.HiWhite("🔧 Components: ")
+		for i, comp := range ticket.Components {
+			if i > 0 {
+				fmt.Print(", ")
+			}
+			color.Cyan("%s", comp.Name)
+			if comp.Lead != nil {
+				color.White(" (Lead: %s)", comp.Lead.DisplayName)
+			}
+		}
+		fmt.Println()
+	} else {
+		color.HiWhite("🔧 Components: ")
+		color.Yellow("None")
+	}
+
+	if len(ticket.Labels) > 0 {
+		color.HiWhite("🏷️  Labels: ")
+		color.Cyan("%s", strings.Join(ticket.Labels, ", "))
+	}
+
+	color.HiWhite("📄 Description: ")
+	color.White("%.200s...", ticket.Description)
+	printSeparator()
 }
